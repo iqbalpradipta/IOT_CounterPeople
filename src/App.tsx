@@ -8,8 +8,8 @@ function App() {
   const [lastUpdateTime, setLastUpdateTime] = useState("Belum ada data");
   const [error, setError] = useState("");
 
-  const CHANNEL_ID = "2943374"; 
-  const READ_API_KEY = "BZPAT7TRHXFI6WSB"; 
+  const CHANNEL_ID = "CHANNEL_ID"; 
+  const READ_API_KEY = "READ_API_KEY"; 
 
   const getThingSpeakUrl = (fieldNum: any) =>
     `https://api.thingspeak.com/channels/${CHANNEL_ID}/fields/${fieldNum}.json?api_key=${READ_API_KEY}&results=1`;

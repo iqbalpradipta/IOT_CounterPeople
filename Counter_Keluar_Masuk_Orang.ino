@@ -7,8 +7,8 @@
 const char* ssid = "YOUR WIFI";
 const char* password = "YOUR PASSWORD";
 
-unsigned long myChannelNumber = 2943374;
-const char * myWriteAPIKey = "13XO9SE8SOSWLNOX";
+unsigned long myChannelNumber = "CHANNEL NUMBER";
+const char * myWriteAPIKey = "API KEY";
 
 const int sensorPin1 = 32;
 const int sensorPin2 = 33;
