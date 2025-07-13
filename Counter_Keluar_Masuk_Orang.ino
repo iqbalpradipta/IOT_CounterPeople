@@ -4,8 +4,8 @@
 #include <time.h>
 #include <ThingSpeak.h>
 
-const char* ssid = "Fainaka";
-const char* password = "24080400";
+const char* ssid = "YOUR WIFI";
+const char* password = "YOUR PASSWORD";
 
 unsigned long myChannelNumber = 2943374;
 const char * myWriteAPIKey = "13XO9SE8SOSWLNOX";
@@ -17,6 +17,9 @@ volatile int peopleIn = 0;
 volatile int peopleOut = 0;
 int peopleInside = 0;
 
+int lastPeopleIn = 0;   
+int lastPeopleOut = 0;  
+
 int lastSensorState1 = HIGH;
 int lastSensorState2 = HIGH;
 
@@ -25,7 +28,7 @@ unsigned long lastSensor2TriggerTime = 0;
 const unsigned long debounceDelay = 200;
 
 unsigned long lastThingSpeakUpdateTime = 0;
-const unsigned long thingSpeakUpdateInterval = 15000;
+const unsigned long thingSpeakMinInterval = 18000; 
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600);
@@ -42,6 +45,7 @@ void setup() {
   Serial.println("===================================");
   Serial.println("   IoT People Counter - ESP32    ");
   Serial.println("   (Mode Independent Counter)    ");
+  Serial.println("   (ThingSpeak Update on Change) "); 
   Serial.println("===================================");
 
   Serial.print("Menghubungkan ke WiFi ");
@@ -96,12 +100,15 @@ void loop() {
 
   unsigned long currentTime = millis();
 
+  bool dataChanged = false; // Flag untuk menandai apakah ada perubahan data yang perlu dikirim
+
   if (currentSensorState1 == LOW && lastSensorState1 == HIGH &&
       (currentTime - lastSensor1TriggerTime > debounceDelay)) {
 
     peopleIn++;
     peopleInside++;
-
+    dataChanged = true; 
+    
     Serial.print("MASUK - ");
     Serial.print(formattedDate);
     Serial.print(" ");
@@ -124,6 +131,7 @@ void loop() {
     if (peopleInside < 0) {
       peopleInside = 0;
     }
+    dataChanged = true;
 
     Serial.print("KELUAR - ");
     Serial.print(formattedDate);
@@ -142,8 +150,11 @@ void loop() {
   lastSensorState1 = currentSensorState1;
   lastSensorState2 = currentSensorState2;
 
-  if (WiFi.status() == WL_CONNECTED && (currentTime - lastThingSpeakUpdateTime > thingSpeakUpdateInterval)) {
-    Serial.println("Mengirim data ke ThingSpeak...");
+  if (WiFi.status() == WL_CONNECTED && 
+      (peopleIn != lastPeopleIn || peopleOut != lastPeopleOut) && 
+      (currentTime - lastThingSpeakUpdateTime > thingSpeakMinInterval)) {
+    
+    Serial.println("Mengirim data ke ThingSpeak (perubahan terdeteksi)...");
 
     ThingSpeak.setField(1, peopleIn);
     ThingSpeak.setField(2, peopleOut);
@@ -152,6 +163,8 @@ void loop() {
     int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
     if (x == 200) {
       Serial.println("Data berhasil terkirim ke ThingSpeak.");
+      lastPeopleIn = peopleIn;   
+      lastPeopleOut = peopleOut;
     } else {
       Serial.print("Gagal mengirim data ke ThingSpeak, HTTP error code ");
       Serial.println(x);
